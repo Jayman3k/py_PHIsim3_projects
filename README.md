@@ -184,7 +184,14 @@ for soa_len in np.linspace(1e-4, 1e-3, 19):
 results = phid.PHIsim_run_concurrent(test_setups, work_folder, executables) 
 ```
 
-More specifically, you want to create an *Iterable* of `PHIsim_ConcurrentSetup` objects and pass that to the `PHIsim_run_concurrent()` function. Here, I just created a list, which will be sufficient for most cases.
+More specifically, you want to create an *Iterable* of `PHIsim_ConcurrentSetup` objects and pass that to the `PHIsim_run_concurrent()` function. Here, I just created a list, which will be sufficient for most cases. You also need to tell the framework where to find the PHIsim executables, and where to put the results. When this is finished, the following folders will have been created (assuming, for example, that 100μm = approx 20 segments):
+
+- C:/Simulation_results/single_SOA_simulations/soa_20_segments_100_mA
+- C:/Simulation_results/single_SOA_simulations/soa_30_segments_100_mA
+- C:/Simulation_results/single_SOA_simulations/soa_40_segments_100_mA
+- ...
+
+Each folder containing all input and output files of a single PHIsim run.
 
 ### 6. Process the results
 

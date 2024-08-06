@@ -19,7 +19,7 @@ As a reminder, PHIsim actually consists out of 2 executables:
 - `PHsim_input.exe` which converts a textual description (which I called the `device_input` file earlier on) of your structure into a detailed device file
 - `PHIsim.exe` which takes in the detailed device, along with a simulation parameters file and (optionally) an input signal file, and runs the actual simulation. After a simulation run, this executable writes 3 files: the optical output signals, and a carrier and photon density file. The former is generally what we're interested in, the latter 2 files can be used to continue the simulation with another run.
 
-All of this is summarized in the following image (courtesy of prof. Erwin Bente):
+All of this is summarized in the following diagram (image courtesy of prof. Erwin Bente):
 
 <img src="doc/PHIsim_workflow.png" alt="Phisim workflow" width="400"/>
 

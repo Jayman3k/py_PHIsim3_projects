@@ -166,7 +166,7 @@ def _run_simulation(config : PHIsim_ConcurrentSetup, exec: PHIsim_Executables, p
                             simpars.photond_file, simpars.signal_input_file], stdout=open("PHIsim_stdout.txt", "w"))
             cycles_completed += 1
 
-    P_LR_out, F_LR_out, P_RL_out, F_RL_out = np.loadtxt(simpars.output_filename, dtype=np.float_, unpack=True, ndmin=2)
+    P_LR_out, F_LR_out, P_RL_out, F_RL_out = np.loadtxt(simpars.output_filename, dtype=float, unpack=True, ndmin=2)
     result = PHIsim_Result(P_LR_out, F_LR_out, P_RL_out, F_RL_out, cycles_completed)
     config.process_result(result)
 

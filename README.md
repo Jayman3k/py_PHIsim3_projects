@@ -76,10 +76,10 @@ You see we put the device code in a string and replaced a few constants with var
 ### 2. Defining the parameters of the simulation
 
 The simulation has a lot of input parameters, which, broadly speaking, fall into two categories:
-- The runtime parameters: how many cycles to run the simulation, the size of a segment, etc.
+- The runtime parameters: how many cycles to run the simulation, the size of a segment, ...
 - The physical parameters: material gain, losses, all sorts of coefficients to describe physical process, ...
   
-Most of these parameters are contained within the `parameter_input_file` shown in the image. Since you may want to test some of these parameters in a simulation sweep, the parallel framework has some facilities to define them and write the parameter file. This is defined in the `PHIsim_sim_params.py` file, which also contains a variable `PHIsim_params_InGaAsP_ridge` with some useful physical constants, relevant for an InP ridge platform (YMMV). An example on how to use this could be:
+Most of these parameters are contained within the `parameter_input_file` shown in the image. Since you may want to test some of these parameters in a simulation sweep, the parallel framework has some facilities to define them and write the parameter file. This is the class `PHIsim_SimulationParams` defined in the `PHIsim_sim_params.py` file, which also contains a variable `PHIsim_params_InGaAsP_ridge` with some useful physical constants, relevant for an InP ridge platform (YMMV). An example on how to use this could be:
 
 ```python 
 import tools.PHIsim_sim_params as phip
@@ -98,8 +98,50 @@ local_sim_params.write_to_file()
 
 ### 3. Define a signal input file
 
-This may not be applicable in some cases, for example, if you're simulating a self-starting laser. In those cases, you can just leave the input signal file empty. If you do need an input signal, you will need to create a function to write that signal to a file. The framework provides some helper functions for a few common signal inputs (for example, a sech2 pulse) in the file `PHIsim_signal_input_util.py`. Some examples on how to use this can be found the example simulation file, too.
+This may not be applicable in some cases, for example, if you're simulating a self-starting laser. In those cases, you can just leave the input signal file empty. If you do need an input signal, you will need to create a function to write that signal to a file. The framework provides some helper functions for a few common signal inputs (for example, a sech2 pulse) in the file `PHIsim_signal_input_util.py`. Some examples of how to use this can be found in the example simulation file `PHIsim_SOA_only_w_dispatcher.py`.
 
 ### 4. tying everything together
 
+With everything above in place, we now need to tie all those elements together in a simulation object that contains all information on how to run a single PHIsim instance. This object will need to be a subclass of the abstract `PHIsim_ConcurrentSetup` class defined in `PHIsim_dispatcher.py`. You must initialize the base class with a `PHIsim_SimulationParams` instance and a local name, which will be used as the subfolder where simulations will be put. Then, each subclass must implement the `initialize_input_files()` method to write the required simulation input files in the assigned subfolder. A skeleton of this class, using the running example of a SOA test, would look like:
 
+```python
+
+import tools.PHIsim_sim_params as phip
+import tools.PHIsim_dispatcher as phid
+
+class TestSOASetup(phid.PHIsim_ConcurrentSetup):
+
+    def __init__(self, sim_params : phip.PHIsim_SimulationParams, soa_len, soa_current, wg_len, signal_params):
+        self.soa_segments = sim_params.length_to_num_segments(soa_len)
+        self.wg_segments = sim_params.length_to_num_segments(wg_len)
+        self.soa_current = soa_current
+        self.signal_params = signal_params # a structure contained signal power, type, duration, ...
+
+        # assume the soa_len and wg_len are the variable parameters\
+        # embedding the variables in the work_folder name will make it easier to process the raw data later (if required)
+        work_folder = "soa_{sseg}_wg_{wseg}".format(sseg=self.soa_segments, wseg=self.wg_segments)
+        super().__init__(sim_params, work_folder)
+
+    @override
+    def initialize_input_files(self):
+        self.initialize_device_file()
+        self.initialize_sim_parameter_file()
+        self.initialize_signal_input_file()
+        ## everything else defaults
+        self.default_initialize_carrierfile()
+        self.default_initialize_photond_file()
+ 
+    def initialize_device_file(self):
+        # use the function we define earlier
+        initialize_device_input_file(self.soa_segments, self.wg_segments, self.soa_current,
+                                     self.signal_params.device_file)
+
+    def initialize_sim_parameter_file(self):
+        self.sim_params.write_to_file()
+
+    def initialize_signal_input_file(self):
+        # use self.signal_params and signal utilities to generate a signal, and write to file
+        # ...
+```
+
+Take a moment to read that and try to understand what's happening.

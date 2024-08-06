@@ -1,4 +1,4 @@
-# Introduction
+## Introduction
 
 This project contains the code for the parallel simulation engine I developed in the context of my master's thesis. 
 Its purpose is to speed up simulation work using PHIsim (https://sites.google.com/tue.nl/phisim/home). Note that this framework was designed specifically for PHIsimV3, and might require updates to work with different versions.
@@ -215,6 +215,6 @@ for (setup, result_data) in results.items():
     output_energy_L = energy_out(result_data, setup.sim_params, "L") # function defined above
     Eout_for_soa_len[actual_soa_len] = output_energy_L
 ```
-After this, the variable `Eout_for_soa_len` will contain the output energy (on the left side) for different SOA lengths with the same driving current. This can then be used, for example, for further processing, or plotting a curve. 
+After this, the variable `Eout_for_soa_len` will contain the output energy (on the left side) for different SOA lengths with the same driving current. This can then be used for further processing, or perhaps plotting a curve. 
 
-Although this particular value is probably not very interesting, it serves as an example of how the result data can be processed. The example file `PHIsim_SOA_only_w_dispatcher.py` contains more complicated examples and some plotting.
+Although this particular value is probably not very interesting, it serves as an example of how the result data can be processed. The example file `PHIsim_SOA_only_w_dispatcher.py` contains more complicated examples and some plotting using matplotlib.

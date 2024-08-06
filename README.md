@@ -168,7 +168,7 @@ import numpy as np
 executables = phid.PHIsim_Executables("C:/PHIsim") # where PHIsim executables are installed
 work_folder = "C:/Simulation_results/single_SOA_simulations" # folder to drop results
 
-# use SI units for all dimensions
+# some fixed parameters - use SI units for all dimensions
 waveguide_len = 1e-3
 soa_current = 0.1
 local_sim_params = phip.PHIsim_params_InGaAsP_ridge.copy(

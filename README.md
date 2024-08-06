@@ -111,13 +111,15 @@ import tools.PHIsim_dispatcher as phid
 
 class TestSOASetup(phid.PHIsim_ConcurrentSetup):
 
-    def __init__(self, sim_params : phip.PHIsim_SimulationParams, soa_len, soa_current, wg_len, signal_params):
+    def __init__(self, sim_params : phip.PHIsim_SimulationParams, 
+                      soa_len, soa_current, wg_len, signal_params):
+                      
         self.soa_segments = sim_params.length_to_num_segments(soa_len)
         self.wg_segments = sim_params.length_to_num_segments(wg_len)
         self.soa_current = soa_current
-        self.signal_params = signal_params # a structure contained signal power, type, duration, ...
+        self.signal_params = signal_params # assuming this is a structure containing signal power, type, duration, ...
 
-        # assume the soa_len and wg_len are the variable parameters\
+        # assume the soa_len and wg_len are the variable parameters
         # embedding the variables in the work_folder name will make it easier to process the raw data later (if required)
         work_folder = "soa_{sseg}_wg_{wseg}".format(sseg=self.soa_segments, wseg=self.wg_segments)
         super().__init__(sim_params, work_folder)
@@ -132,11 +134,12 @@ class TestSOASetup(phid.PHIsim_ConcurrentSetup):
         self.default_initialize_photond_file()
  
     def initialize_device_file(self):
-        # use the function we define earlier
+        # use the function we defined earlier
         initialize_device_input_file(self.soa_segments, self.wg_segments, self.soa_current,
                                      self.signal_params.device_file)
 
     def initialize_sim_parameter_file(self):
+        # this one's easy
         self.sim_params.write_to_file()
 
     def initialize_signal_input_file(self):

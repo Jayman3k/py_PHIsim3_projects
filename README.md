@@ -1,4 +1,4 @@
-## Introduction
+# Introduction
 
 This project contains the code for the parallel simulation engine I developed in the context of my master's thesis. 
 Its purpose is to speed up simulation work using PHIsim (https://sites.google.com/tue.nl/phisim/home). Note that this framework was designed specifically for PHIsimV3, and might require updates to work with different versions.
@@ -8,11 +8,17 @@ The framework also allows you to define hooks to collect information from a simu
 
 The framework was tested on computers with the Windows 10 and Windows 11 operating systems.
 
+## Using this framework
+
+## Prerequisites
+
+- A working installation of PHIsim, and a basic understanding of how it works. I would recommend that you at least try to run a few examples before trying to parallelize simulations.
+- Have a recent Python version installed (I recommend 3.12), including a package manager such as pip. A couple of packages (listed in the comments in the `__init__` file) are required to run the code. Some experience with packages such as numpy and matplotlib is useful, for processing and plotting results.
+   - (Note: I realize that there are Python frameworks to formally specify which packages and which versions of those packages are used. At the time of writing my master's thesis, I considered this a low priority task, and I didn't put any effort into it. You can blame my limited experience with Python dependency hell for that.)
+
 ## Getting started
 
-In a first step, before you start using this framework, it's best to have a working PHIsim simulation with (at least) one variation of the setup you want to test. In other words, you manually design your `device_input` file such that you have a device file that you know will work. The format of the `device_input` file is easy to understand, so it should be straightforward to create the `device_file` by hand. Then, you can use the python scripts published on the PHIsim website to run your simulation and debug any potential issues. If this is your first rodeo with PHIsim, this will allow you to familiarize yourself with the concepts used by the simulation.
-
-## Using this framework
+Before you start using this framework, it's best to have a working PHIsim simulation with (at least) one variation of the setup you want to test. In other words, you manually design your `device_input` file such that you have a device file that you know will work. The format of the `device_input` file is easy to understand, so it should be straightforward to create the `device_file` by hand. Then, you can use the python scripts published on the PHIsim website to run your simulation and debug any potential issues. If this is your first rodeo with PHIsim, this will allow you to familiarize yourself with the concepts used by the simulation.
 
 As a reminder, PHIsim actually consists out of 2 executables: 
 
@@ -23,7 +29,7 @@ All of this is summarized in the following diagram (image courtesy of prof. Erwi
 
 <img src="doc/PHIsim_workflow.png" alt="Phisim workflow" width="400"/>
 
-The parallelization framework aims to automate these tasks. There are a lot of degrees of freedom here, so there are quite a few things to set up before we have a fully contained simulation object. 
+The parallelization framework aims to automate these tasks. There are a lot of degrees of freedom here, so there are quite a few things to set up before we have a fully contained simulation object. I'll go over them step by step in the next sections:
 
 ### 1. Creating a flexible `device_file`
 
@@ -199,22 +205,48 @@ After a simulation has run, you can process the results. The results object retu
 
 ```python
 def energy_out(data, simulation_params, output_side):
-    if output_side == "L":
+    if output_side == "left":
         return np.sum(data.P_RL_out) * simulation_params.simulation_time_step()
-    elif output_side == "R":
+    elif output_side == "right":
         return np.sum(data.P_LR_out) * simulation_params.simulation_time_step()
 
+    raise RuntimeError(f"unknown output side {output_side}, use 'left' or 'right'")
 ```
  and then get the energy output versus soa_length, 
 ```python
-
 Eout_for_soa_len = {}
 for (setup, result_data) in results.items():
     # actual length may differ slightly from input length due to rounding 
     actual_soa_len = setup.sim_params.simulation_segment_length(setup.soa_segments) 
-    output_energy_L = energy_out(result_data, setup.sim_params, "L") # function defined above
+    output_energy_L = energy_out(result_data, setup.sim_params, "left") # function defined above
     Eout_for_soa_len[actual_soa_len] = output_energy_L
 ```
 After this, the variable `Eout_for_soa_len` will contain the output energy (on the left side) for different SOA lengths with the same driving current. This can then be used for further processing, or perhaps plotting a curve. 
 
 Although this particular value is probably not very interesting, it serves as an example of how the result data can be processed. The example file `PHIsim_SOA_only_w_dispatcher.py` contains more complicated examples and some plotting using matplotlib.
+
+### A1. Parallelize data processing
+
+You can also add some concurrent data processing to the simulation setup object. For this, you override the `process_result()` function which allows you to add more data to the results object. With the example specified above, we could parallelize the calculations of the output energy with:
+
+```python
+
+class TestSOASetup(phid.PHIsim_ConcurrentSetup):
+    # ...
+    # assume all other code in the class stays the same as above
+    # ... 
+
+    @override
+    def process_result(self, result_data: phid.PHIsim_Result):
+        result_data.output_energy_R = energy_out(result_data, self.sim_params, "right")
+        result_data.output_energy_L = energy_out(result_data, self.sim_params, "left")
+```
+And then the data collection reduces to
+```python
+Eout_for_soa_len = {}
+for (setup, result_data) in results.items():
+    # actual length may differ slightly from input length due to rounding 
+    actual_soa_len = setup.sim_params.simulation_segment_length(setup.soa_segments) 
+    Eout_for_soa_len[actual_soa_len] = result_data.output_energy_L
+```
+And with this, the calculation of the output energy is now fully parallelized. Of course, the performance gain in this example would be minimal. For more complex data processing, e.g., spectral analysis with discrete fourier transforms, the gains could be noticeable.

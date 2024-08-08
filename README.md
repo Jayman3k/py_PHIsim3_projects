@@ -297,6 +297,7 @@ class TestSOASetup(phid.PHIsim_ConcurrentSetup):
 You can then either pass in a fixed number, or calculate the desired number of cycles.
 ```python
 desired_time = 1e-6
+# sim_params.simulation_total_time() returns the simulated time in one PHIsim run
 num_cycles = (int) np.ceil(desired_time / sim_params.simulation_total_time())
 
 # you probably want to guard yourself against typos in the desired_time variable 

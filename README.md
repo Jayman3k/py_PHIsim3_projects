@@ -1,20 +1,42 @@
+# Table of Contents
+
+- [Table of Contents](#table-of-contents)
+- [Introduction](#introduction)
+- [Using this framework](#using-this-framework)
+  - [Prerequisites](#prerequisites)
+  - [Getting started](#getting-started)
+    - [1. Creating a flexible `device_file`](#1-creating-a-flexible-device_file)
+    - [2. Defining the parameters of the simulation](#2-defining-the-parameters-of-the-simulation)
+    - [3. Define a signal input file](#3-define-a-signal-input-file)
+    - [4. Define a simulation setup class](#4-define-a-simulation-setup-class)
+    - [5. Define a parameter sweep](#5-define-a-parameter-sweep)
+    - [6. Process the results](#6-process-the-results)
+  - [A1. Parallelize data processing](#a1-parallelize-data-processing)
+  - [A2. Running long simulations](#a2-running-long-simulations)
+
+
 # Introduction
 
-This project contains the code for the parallel simulation engine I developed in the context of my master's thesis. 
-Its purpose is to speed up simulation work using PHIsim (https://sites.google.com/tue.nl/phisim/home). Note that this framework was designed specifically for PHIsimV3, and might require updates to work with different versions.
+This project contains the code for the parallel simulation engine I developed in the context of my master's thesis:
+- "Modelling of an on-chip modelocked ring laser with a graphene-based saturable absorber",
+  - author (me) Joris Borms 
+  - promotor prof. Nathalie Vermeulen ([VUB - B-PHOT](https://www.b-phot.org/)),
+  - external advisor prof. Erwin Bente (TU/e)  
+
+The purpose of this framework is to speed up simulation work using PHIsim (https://sites.google.com/tue.nl/phisim/home). Note that this framework was designed specifically for PHIsimV3, and might require updates to work with different versions.
 
 We achieve the parallelization by defining simulation objects that contain all necessary information for running a PHIsim instance; then we spin out these instances to separate processes.
 The framework also allows you to define hooks to collect information from a simulation, so some of the data processing can also be parallelized. 
 
 The framework was tested on computers with the Windows 10 and Windows 11 operating systems.
 
-## Using this framework
+# Using this framework
 
 ## Prerequisites
 
 - A working installation of PHIsim, and a basic understanding of how it works. I would recommend that you at least try to run a few examples before trying to parallelize simulations.
 - Have a recent Python version installed (I recommend 3.12), including a package manager such as pip. A couple of packages (listed in the comments in the `__init__` file) are required to run the code. Some experience with packages such as numpy and matplotlib is useful, for processing and plotting results.
-   - (Note: I realize that there are Python frameworks to formally specify which packages and which versions of those packages are used. At the time of writing my master's thesis, I considered this a low priority task, and I didn't put any effort into it. You can blame my limited experience with Python dependency hell for that.)
+   - (Note: I realize that there are Python frameworks to formally specify which packages and which versions of those packages are used. At the time of writing my master's thesis, I considered this a low-priority task, and I didn't put any effort into it. You can blame my limited experience with Python dependency hell for that.)
 
 ## Getting started
 
@@ -33,7 +55,7 @@ The parallelization framework aims to automate these tasks. There are a lot of d
 
 ### 1. Creating a flexible `device_file`
 
-Starting from your working setup, create a function to write a parameterized `device_file`. Let's say that, for example, you have a simple setup with some waveguides and an SOA. The file would look like this:
+Starting from your working setup, create a function to write a parameterized `device_file`. Let's say that, for example, you have a simple setup with some waveguides and an SOA. The file could look like this:
 
 ```
 IO_left__  8             # this always needs to be in the input file
@@ -52,10 +74,11 @@ xxx  -1  xxx -1  # end of connections list - start of current source list
 From this point on the file can contain any text.
 ```
 
-Let's say we want to have a parameterized waveguide and SOA length, and driving current. The corresponding python function would then become (for example):
+Let's say we want to have a parameterized waveguide, SOA length, and SOA driving current. The corresponding python function would then become (for example):
 
 ```python
     def initialize_device_input_file(wg_segments, soa_segments, soa_current, device_filename):
+        # build device with given parameters
         device_input_content = """\
 IO_left__  8		            # this always needs to be in the input file
 paswg_L__  1   {wg}               # passive waveguide on the left
@@ -73,6 +96,7 @@ xxx  -1  xxx -1 	# end of connections list - start of current source list
 From this point on the file can contain any text.
 """.format(cur = soa_current, seg = soa_segments, wg = wg_segments)
 
+        # write device to file
         with open(device_filename, 'w') as f:
             f.write(device_input_content)
 ```
@@ -158,9 +182,11 @@ class TestSOASetup(phid.PHIsim_ConcurrentSetup):
         # ...
 ```
 
-Take a moment to read that and try to understand what's happening. It should be relatively straightforward:
+Take a moment to read that and try to understand what's happening. It's a lot to take in, but should be relatively straightforward:
 - We create new setup class `TestSOASetup` which inherits from the base class `PHIsim_ConcurrentSetup`
 - This class has a constructor (the `__init__()` method) which takes in all parameters for a simulation run. Here, that's the simulation paramaters, model parameters and signal parameters. The constructor stores all parameters, creates a unique work-folder name based on these parameters, and initializes the base class.
+  - footnote 1: Of course, you can also pass and store other parameters not directly related to the simulation.This can be helpful later when processing the data.
+  - footnote 2: Here, I'm auto-generating the work-folder name. In some cases, if you have a lot of parameters to play around with that may be difficult, and it will make more sense to pass in a sensible work-folder name instead.
 - We override the `initialize_input_files()` function. Note that the `@override` annotation is optional, but I prefer having it to make it more obvious that this is an overriding method. We initialize the 5 different input files, but we can almost always use the `self.default_initialize_xxx()` for the carrierfile and photond file. So that leaves us with 3 files that need to be initialized: the device file, the simulations parameter file and the signal file. This is all done in this method.
 
 ### 5. Define a parameter sweep
@@ -184,7 +210,8 @@ signal_params = {} # parameters for the input signal, not implemented in this ex
 
 test_setups = []
 for soa_len in np.linspace(1e-4, 1e-3, 19):
-    test_setups.append(TestSOASetup(local_sim_params, soa_len, soa_current, waveguide_len, signal_params))
+    test_setups.append(
+        TestSOASetup(local_sim_params, soa_len, soa_current, waveguide_len, signal_params))
 
 # run all simulations in parallel and get results
 results = phid.PHIsim_run_concurrent(test_setups, work_folder, executables) 
@@ -201,7 +228,7 @@ Each folder containing all input and output files of a single PHIsim run.
 
 ### 6. Process the results
 
-After a simulation has run, you can process the results. The results object returned by `PHIsim_run_concurrent()` is a dictionary that maps a test setup to a `PHIsim_Result` object (also defined in `PHIsim_dispatcher.py`), which contains the output optical power and phase at both the left (L) and right (R) outputs. Suppose, for example, you want to calculate the total energy output during a simulation, you could calculate
+After a simulation has run, you can process the results. The results object returned by `PHIsim_run_concurrent()` is a dictionary that maps a test setup to a `PHIsim_Result` object (also defined in `PHIsim_dispatcher.py`), which contains the output optical power and phase at both the left (RL) and right (LR) outputs. Suppose, for example, you want to calculate the total energy output during a simulation, you could calculate
 
 ```python
 def energy_out(data, simulation_params, output_side):
@@ -225,12 +252,11 @@ After this, the variable `Eout_for_soa_len` will contain the output energy (on t
 
 Although this particular value is probably not very interesting, it serves as an example of how the result data can be processed. The example file `PHIsim_SOA_only_w_dispatcher.py` contains more complicated examples and some plotting using matplotlib.
 
-### A1. Parallelize data processing
+## A1. Parallelize data processing
 
 You can also add some concurrent data processing to the simulation setup object. For this, you override the `process_result()` function which allows you to add more data to the results object. With the example specified above, we could parallelize the calculations of the output energy with:
 
 ```python
-
 class TestSOASetup(phid.PHIsim_ConcurrentSetup):
     # ...
     # assume all other code in the class stays the same as above
@@ -249,4 +275,31 @@ for (setup, result_data) in results.items():
     actual_soa_len = setup.sim_params.simulation_segment_length(setup.soa_segments) 
     Eout_for_soa_len[actual_soa_len] = result_data.output_energy_L
 ```
-And with this, the calculation of the output energy is now fully parallelized. Of course, the performance gain in this example would be minimal. For more complex data processing, e.g., spectral analysis with discrete fourier transforms, the gains could be noticeable.
+And with this, the calculation of the output energy is now fully parallelized. Of course, the performance gain in this example would be minimal. For more complex data processing, such as spectral analysis or curve fitting, the gains could be noticeable.
+
+## A2. Running long simulations
+
+For longer simulations that cannot be completed in a single PHIsim run, we can run PHIsim several times in succession, using the carrier density and photon density output files of a previous run as inputs for the next. With the framework, this can easily be automated. When creating a test setup, we simply need to fill in the `num_PHIsim_cycles` parameter when initializing the `PHIsim_ConcurrentSetup` base class. For example:
+
+```python
+class TestSOASetup(phid.PHIsim_ConcurrentSetup):
+
+    def __init__(self, sim_params : phip.PHIsim_SimulationParams, 
+                      soa_len, soa_current, wg_len, signal_params, num_cycles):
+
+        # ...
+        # assume other code in the constructor stays the same
+        # ...
+
+        # initialize the base class
+        super().__init__(sim_params, work_folder, num_cycles)
+```
+You can then either pass in a fixed number, or calculate the desired number of cycles.
+```python
+desired_time = 1e-6
+num_cycles = (int) np.ceil(desired_time / sim_params.simulation_total_time())
+# guard yourself against typos in the desired_time variable (yes, I'm speaking out of experience)
+if num_cycles > 100:
+    print(f"WARNING: num_cycles is {num_cycles}, are you sure about that?")
+```
+

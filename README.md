@@ -20,7 +20,7 @@
 This project contains the code for the parallel simulation engine I developed in the context of my master's thesis:
 - "Modelling of an on-chip modelocked ring laser with a graphene-based saturable absorber",
   - author (me) Joris Borms 
-  - promotor prof. Nathalie Vermeulen ([VUB - B-PHOT](https://www.b-phot.org/)),
+  - promotor prof. Nathalie Vermeulen (VUB - [B-PHOT](https://www.b-phot.org/)),
   - external advisor prof. Erwin Bente (TU/e)  
 
 The purpose of this framework is to speed up simulation work using PHIsim (https://sites.google.com/tue.nl/phisim/home). Note that this framework was designed specifically for PHIsimV3, and might require updates to work with different versions.
@@ -285,7 +285,7 @@ For longer simulations that cannot be completed in a single PHIsim run, we can r
 class TestSOASetup(phid.PHIsim_ConcurrentSetup):
 
     def __init__(self, sim_params : phip.PHIsim_SimulationParams, 
-                      soa_len, soa_current, wg_len, signal_params, num_cycles):
+                      soa_len, soa_current, wg_len, signal_params, num_cycles : int):
 
         # ...
         # assume other code in the constructor stays the same
@@ -298,7 +298,9 @@ You can then either pass in a fixed number, or calculate the desired number of c
 ```python
 desired_time = 1e-6
 num_cycles = (int) np.ceil(desired_time / sim_params.simulation_total_time())
-# guard yourself against typos in the desired_time variable (yes, I'm speaking out of experience)
+
+# you probably want to guard yourself against typos in the desired_time variable 
+# (yes, I'm speaking out of experience)
 if num_cycles > 100:
     print(f"WARNING: num_cycles is {num_cycles}, are you sure about that?")
 ```

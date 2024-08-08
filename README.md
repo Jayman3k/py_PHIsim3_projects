@@ -19,9 +19,9 @@
 
 This project contains the code for the parallel simulation engine I developed in the context of my master's thesis:
 > **Modelling of an on-chip modelocked ring laser with a graphene-based saturable absorber**
->  - *author* - Joris Borms 
->  - *promotor* - prof. Nathalie Vermeulen (VUB - [B-PHOT](https://www.b-phot.org/))  
->  - *external advisor* - prof. Erwin Bente (TU/e)  
+>  - *author* - [Joris Borms](https://www.linkedin.com/in/joris-borms-7590312/) 
+>  - *promotor* - [prof. Nathalie Vermeulen](https://www.b-phot.org/team/nathalie-vermeulen) (VUB - [B-PHOT](https://www.b-phot.org/))  
+>  - *external advisor* - [prof. Erwin Bente](https://www.tue.nl/en/research/researchers/erwin-bente) (TU/e)  
 
 The purpose of this framework is to speed up simulation work using PHIsim (https://sites.google.com/tue.nl/phisim/home). Note that this framework was designed specifically for PHIsimV3, and might require updates to work with different versions.
 

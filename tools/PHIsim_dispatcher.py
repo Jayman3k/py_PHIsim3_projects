@@ -81,19 +81,28 @@ class PHIsim_ConcurrentSetup(ABC):
         output_base = self.sim_params.output_filename[:-4] # strip '.txt' the same way PHIsim does
 
         # use output of previous cycle as input for next cycle
-        os.remove(self.sim_params.photond_file)
-        os.remove(self.sim_params.carrier_file)
-        os.rename(f"{output_base}_opt.txt", self.sim_params.photond_file)
-        os.rename(f"{output_base}_car.txt", self.sim_params.carrier_file)	
+        self.__force_file_move(f"{output_base}_opt.txt", self.sim_params.photond_file)
+        self.__force_file_move(f"{output_base}_car.txt", self.sim_params.carrier_file)
 
-        # TODO delete signal file?
+        # delete signal file
+        # this assumes the signal is only intended as a "startup" signal
+        # (this behavior may be extended in the future if required)
+        self.default_initialize_signal_input_file()
 
         # rename intermediate results so we don't lose them
-        os.rename(self.sim_params.output_filename, f"{output_base}_{cycles_completed}.txt")
+        self.__force_file_move(self.sim_params.output_filename, f"{output_base}_{cycles_completed}.txt")
         if self.sim_params.video_N > 0:
             for suffix in ("carriers", "LRf", "LRp", "RLf", "RLp"):	
-                os.rename(f"{output_base}_vid_{suffix}.txt", 
-                          f"{output_base}_vid_{suffix}_{cycles_completed}.txt")
+                self.__force_file_move(f"{output_base}_vid_{suffix}.txt", 
+                                       f"{output_base}_vid_{suffix}_{cycles_completed}.txt")        
+
+    def __force_file_move(self, old_filename, new_filename):
+        """Delete 'new' if it existed, then rename 'old' to 'new'."""
+        try:
+            os.remove(new_filename)
+        except FileNotFoundError:
+            pass
+        os.rename(old_filename, new_filename)
 
     ## a few convenience methods that can be called by subclasses,
     ## in case a default/empty photond, carrier or signal input is needed

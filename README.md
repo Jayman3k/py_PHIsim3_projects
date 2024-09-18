@@ -1,6 +1,4 @@
-# Table of Contents
 
-- [Table of Contents](#table-of-contents)
 - [Introduction](#introduction)
 - [Using this framework](#using-this-framework)
   - [Prerequisites](#prerequisites)
@@ -13,6 +11,11 @@
     - [6. Process the results](#6-process-the-results)
   - [A1. Parallelize data processing](#a1-parallelize-data-processing)
   - [A2. Running long simulations](#a2-running-long-simulations)
+- [Troubleshooting](#troubleshooting)
+  - [Run PHIsim without parallelization](#run-phisim-without-parallelization)
+  - [Potential Parallelization issues](#potential-parallelization-issues)
+    - [Simulation is too short](#simulation-is-too-short)
+    - [Running out of RAM](#running-out-of-ram)
 
 
 # Introduction
@@ -306,3 +309,36 @@ if num_cycles > 100:
     print(f"WARNING: num_cycles is {num_cycles}, are you sure about that?")
 ```
 
+# Troubleshooting
+
+The code can sometimes behave a bit quirky. The current solution to parallelize PHIsim has a few disadvantages, sometimes causing weird behavior or crashes. If your code doesn't run, you can try the following.
+
+## Run PHIsim without parallelization
+
+First, try to make sure your model runs in PHIsim without using the parallelization framework at all. This is especially important if you're relatively new to PHIsim. It's easy to make a mistake in the connections in the device-file, for example.
+
+If you're pretty sure that works, you can try to double-check this using the ``debug_serial=True`` flag when running ``PHIsim_run_concurrent()``, e.g., 
+```python
+# see examples above for context
+results = phid.PHIsim_run_concurrent(test_setups, work_folder, executables, debug_serial=True) 
+```
+which will disable parallelization in the framework, and instead will run all tasks serially. This allows you to inspect the error messages more carefully. 
+
+Note that the framework dumps the output of the PHIsim exectutables to ``_stdout.txt`` files, so have a look at the content of those files for any potential errors.
+
+## Potential Parallelization issues
+
+### Simulation is too short
+
+The framework will write a lot of files, both input and results. If you're running a lot of very short simulations that take only a few seconds to complete, it's possible to overwhelm the file-service subsystem of your OS, which will simply start denying access at that point. There's no easy solution to this problem. A few things to try
+
+   - run things serially using the ``debug_serial=True`` flag, as explained above. A bit disappointing, but for very short simulations this can be acceptable, and it still allows you to use the framework to manage your work and process results.
+   - reduce the number of processes that can run in parallel. This number is the constant ``MAX_NUM_CONCURRENT`` in ``PHIsim_dispatcher.py``. A small number (2 - 4) could still work.
+
+### Running out of RAM
+
+Unfortunately, there's no easy way to check if your system has enough RAM to run all the PHIsim instances beforehand. For simulations with a long duration and a large device, this could be an issue. 
+
+If you start seeing weird errors like ``[WinAPI] Resource Unavailable`` you might be running out of memory. Have a look at your RAM usage using windows task manager, if it approaches 100%, this is most likely the culprit. The only way to work around this issue is to run less processes in parallel. So either you reduce this in your test setup, or you manually reduce ``MAX_NUM_CONCURRENT`` in ``PHIsim_dispatcher.py``.
+
+Note: If sufficient people are having trouble with this, please contact me. Please detail your problems as much as possible. I might consider adding more facilities for debugging, or at least make the concurrent count a variable rather than a constant.

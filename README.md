@@ -9,8 +9,9 @@
     - [4. Define a simulation setup class](#4-define-a-simulation-setup-class)
     - [5. Define a parameter sweep](#5-define-a-parameter-sweep)
     - [6. Process the results](#6-process-the-results)
-  - [A1. Parallelize data processing](#a1-parallelize-data-processing)
-  - [A2. Running long simulations](#a2-running-long-simulations)
+  - [Advanced Topics](#advanced-topics)
+    - [Parallelize data processing](#parallelize-data-processing)
+    - [Running long simulations](#running-long-simulations)
 - [Troubleshooting](#troubleshooting)
   - [Run PHIsim without parallelization](#run-phisim-without-parallelization)
   - [Potential Parallelization issues](#potential-parallelization-issues)
@@ -255,7 +256,9 @@ After this, the variable `Eout_for_soa_len` will contain the output energy (on t
 
 Although this particular value is probably not very interesting, it serves as an example of how the result data can be processed. The example file `PHIsim_SOA_only_w_dispatcher.py` contains more complicated examples and some plotting using matplotlib.
 
-## A1. Parallelize data processing
+## Advanced Topics
+
+### Parallelize data processing
 
 You can also add some concurrent data processing to the simulation setup object. For this, you override the `process_result()` function which allows you to add more data to the results object. With the example specified above, we could parallelize the calculations of the output energy with:
 
@@ -280,7 +283,7 @@ for (setup, result_data) in results.items():
 ```
 And with this, the calculation of the output energy is now fully parallelized. Of course, the performance gain in this example would be minimal. For more complex data processing, such as spectral analysis or curve fitting, the gains could be noticeable.
 
-## A2. Running long simulations
+### Running long simulations
 
 For longer simulations that cannot be completed in a single PHIsim run, we can run PHIsim several times in succession, using the carrier density and photon density output files of a previous run as inputs for the next. With the framework, this can easily be automated. When creating a test setup, we simply need to fill in the `num_PHIsim_cycles` parameter when initializing the `PHIsim_ConcurrentSetup` base class. For example:
 

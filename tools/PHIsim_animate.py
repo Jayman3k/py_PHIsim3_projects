@@ -32,6 +32,36 @@ def animate_video(work_folder, output_filename,
                                  "error" : DEFAULT_FRAME_ABORT_TRESHOLD},
                   # additional arguments passed to animation.save()
                   **kwargs):
+    """Animate the video produced by PHIsim.
+
+    Recommended encoding is mp4, you need ffmpeg installed for it to work.
+    (how to install ffmpeg on Windows: https://phoenixnap.com/kb/ffmpeg-windows)
+
+    Parameters
+    ----------
+    work_folder: str
+        The folder where the PHIsim output is stored.
+    output_filename: str
+        The filename of the output video, including extension (e.g. "animation.mp4")
+
+    phisimout_name: str, optional
+        The name of the PHIsim output file (default: 'PHIsimout.txt')
+        The video files derive their name from this filename, so if you 
+        changed it from the default in your simulations, you need to change it here too.
+    show_progress: bool, optional
+        Whether to show a progress bar while encoding the animation(default: True)
+    show_result: bool, optional
+        Whether to show the result (default: True)
+    print_debug: bool, optional
+        Whether to print debug information (default: True)
+    sanity_limits: dict, optional
+        A dictionary containing the following keys and values:
+        - 'warn' : [int], prints a warning when the number of frames is larger than this value
+        - 'error' : [int], aborts the animation when the number of frames is larger than this value
+    **kwargs
+        Additional arguments passed to animation.save() 
+        (for example, fps=30 will set the animation fps)
+    """
 
     PHIsimout_prefix = phisimout_name[:-4] # strip '.txt' the same way PHIsim does
 

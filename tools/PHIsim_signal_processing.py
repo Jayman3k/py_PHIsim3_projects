@@ -220,10 +220,11 @@ def get_peak_indexes(power, time_step:float, expected_rep_rate:float, minimum_pe
     return peak_idxs
 
 
-def pulse_energy_and_repetition_rate(power, time_step:float, expected_rep_rate:float) -> tuple[float, float]:
+def pulse_energy_and_repetition_rate(power, time_step:float, expected_rep_rate:float) -> tuple[float, float, float]:
     """returns (average_pulse_energy, pulse_energy_std, actual_pulse_rate)
     Pulse rate is returned as a "sanity check". If this differs significantly from the expected value,
     it means that the pulse quality is poor.
+    The intended use is with a steady flow of comparable pulses, e.g. from a mode-locked laser.
     """	
     peak_idxs = get_peak_indexes(power, time_step, expected_rep_rate)
 
@@ -240,6 +241,25 @@ def pulse_energy_and_repetition_rate(power, time_step:float, expected_rep_rate:f
     pulse_energy_std = np.std(pulse_energy_series)
     actual_pulse_rate = len(peak_idxs) / (time_step * len(power)) 
     return average_pulse_energy, pulse_energy_std, actual_pulse_rate
+
+
+def pulse_energies(power, time_step:float, min_peak_height:float, window:float) -> tuple[np.ndarray, np.ndarray]:
+    """Look at an input signal, find peaks, and calculate the energy of each peak. A window around the peak
+    needs to be specified, so you need to have some idea of how wide the peaks can be.
+    returns (timestamps, peak_energies)
+    """
+    window_idx = int(window/time_step)
+    peak_idxs, _ = signal.find_peaks(power, height=min_peak_height, distance=window_idx*2)
+
+    if len(peak_idxs) == 0:
+        return (None, None)
+
+    energy = np.zeros(len(peak_idxs))
+    for i, peak_idx in enumerate(peak_idxs):
+        energy[i] = np.sum(power[peak_idx-window_idx//2:peak_idx+window_idx//2]) * time_step
+
+    return (peak_idxs*time_step, energy)
+
 
 
 def _scaled_sech2(t, tau, scale, offset_t):

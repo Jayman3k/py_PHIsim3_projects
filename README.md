@@ -48,7 +48,7 @@ The framework was tested on computers with the Windows 10 and Windows 11 operati
 Unfortunately, this tool is not packaged as a python package, so you'll have to download it directly from github. You can go to the op of the page to `Code > Download zip`, but if you're somewhat familiar with git I recommend cloning the repository. Then you can use it in two ways:
 
    - Simply copy the tools folder to wherever you want to run the simulations and place your own Python files next to it, similar to the example file provided.
-   - A better way to avoid copying the files multiple times is to use a junction  to the tools folder from your working folder. This is a kind of linked folder, (install `junction` from [here](https://learn.microsoft.com/en-us/sysinternals/downloads/junction)), so just create a work-folder, put your own Python files there, and create a junction with:
+   - A better way to avoid copying the files multiple times is to use a junction  to the tools folder from your working folder. A junction is a kind of linked folder, (install `junction` from [here](https://learn.microsoft.com/en-us/sysinternals/downloads/junction)). Create (or go to) a work-folder, put your own Python files there, and create a junction with:
   
          junction tools path\to\py_PHIsim3_projects\tools
   

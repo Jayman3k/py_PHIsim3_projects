@@ -222,14 +222,39 @@ def repeat_pulse(time_array, pulse_power, pulse_phase, times : int, distance : f
     If distance is not a multiple of the time step, small rounding errors will be introduced, 
     and the resulting pulses will not be shifted exactly by the given distance."""
 
+    return shift_repeat_pulse(time_array, pulse_power, pulse_phase, 
+                              [i * distance for i in range(1, times)])
+    # time_step = time_array[1] - time_array[0]
+
+    # # to sum pulses, we convert to electric field, sum the shifted electric fields and then convert back
+    # base_field = np.sqrt(pulse_power) * np.exp(1j * pulse_phase)
+    # pulse_field = np.copy(base_field)
+    # for i in range(1, times):
+    #      # re-shift the base field on each iteration to reduce the rounding error in index_shift
+    #     index_shift = int(i * distance / time_step) 
+    #     pulse_field += np.roll(base_field, index_shift)
+
+    # pulse_power = np.abs(pulse_field) ** 2
+    # pulse_phase = np.angle(pulse_field)
+
+    # return pulse_power, pulse_phase
+
+
+def shift_repeat_pulse(time_array, pulse_power, pulse_phase, shifts):
+    """Utility method to repeat a pulse a given number of times. 
+    shifts is an iterable of delta-times over which the pulse is shifted and added.
+
+    If the shifts are not a multiple of the time step, small rounding errors will be introduced, 
+    and the resulting pulses will not be shifted exactly by the given distance."""
+
     time_step = time_array[1] - time_array[0]
 
     # to sum pulses, we convert to electric field, sum the shifted electric fields and then convert back
     base_field = np.sqrt(pulse_power) * np.exp(1j * pulse_phase)
     pulse_field = np.copy(base_field)
-    for i in range(1, times):
+    for shift_t in shifts:
          # re-shift the base field on each iteration to reduce the rounding error in index_shift
-        index_shift = int(i * distance / time_step) 
+        index_shift = int(shift_t / time_step) 
         pulse_field += np.roll(base_field, index_shift)
 
     pulse_power = np.abs(pulse_field) ** 2

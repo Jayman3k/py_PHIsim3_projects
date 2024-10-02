@@ -22,6 +22,9 @@ class _NoPrint:
 
 @dataclass(kw_only=True)
 class PHIsim_SimulationParams:
+    # version descriptor of PHIsim, can be used indicate certain properties are (not) supported
+    #################################################################################################
+    PHIsim_branch:                     Annotated[str, _NoPrint] = "master"
 
     # simulation input files
     #################################################################################################
@@ -114,7 +117,6 @@ class PHIsim_SimulationParams:
     graphene_width_grw:                Annotated[float, _PD(2205, 'GRwg_width',      'width of the graphene layer on the waveguide in m')]
     n2_index_grw:                      Annotated[float, _PD(2206, 'GRwg_n2_index',   'total non linear refractive index n2 of the graphene loaded waveguide')]
 
-
     # utility methods to convert between number of segments and units of time or length
     #################################################################################################
 
@@ -133,23 +135,65 @@ class PHIsim_SimulationParams:
         this is a potential issue."""	
         return int(round(length / self.simulation_segment_length()))
 
+    # list op properties that only appear in a certain version of PHIsim
+    #################################################################################################
+    __BUILD_VERSION_EXCLUSIVE = {
+        "master" : (),
+        "graphene-loaded-waveguide" : (
+            # dispersion approximation
+            "gvd_wga",
+            # graphene-loaded waveguide properties
+            "alpha_non_sat_grwg",
+            "alpha_sat_grw",
+            "carrier_lifetime_grw", 
+            "N_sat_grw", 
+            "sigma_FCR_grw",
+            "graphene_width_grw",
+            "n2_index_grw"
+        )
+    }
+
+    @classmethod
+    def __BUILD_VERSION_EXCLUSIVE_sanity_check(cls):
+        # sanity check - check that all fields defined above are actually in PHIsim_SimulationParams
+        allnames = [field.name for field in fields(PHIsim_SimulationParams)]
+        for (version, fieldnames) in cls.__BUILD_VERSION_EXCLUSIVE.items():
+            for name in fieldnames:
+                if name not in allnames:
+                    raise RuntimeError(f"BUILD_VERSION_EXCLUSIVE field {name} (defined for version {version}) is not in PHIsim_SimulationParams")
+                
+    def is_excluded(self, field):
+        for (branch, exclusive_fields) in self.__BUILD_VERSION_EXCLUSIVE.items():
+            for exclusive_field in exclusive_fields:
+                if field == exclusive_field:
+                    return branch != self.PHIsim_branch
+        return False
+                
     #################################################################################################
 
     def write_to_file(self):
+        self.__BUILD_VERSION_EXCLUSIVE_sanity_check()
         """Write the simulation parameters to the configurartion file, using the annotations defined for each parameter."""	
         with open(self.params_file, 'w') as f:
             f.write("9998        #  input format indicator format 2023_04\n")
             f.write("#######################################################################################\n")
             f.write("# Control - general parameters\n")
             f.write("##############################\n")
+
             for field in fields(PHIsim_SimulationParams):
                 annotation = field.type.__metadata__[0]
+                
                 if annotation == _NoPrint:
                     continue
+                if self.is_excluded(field):
+                    continue
+
+                assert isinstance(annotation, _PD)
                 if annotation.new_section != None:
                     f.write("##############################\n")
                     f.write(f"#### {annotation.new_section}\n")
                     f.write("##############################\n")
+
                 f.write(f"{annotation.key}_{annotation.shortname:_<15}    {getattr(self, field.name):>14} # {annotation.comment}\n")
             f.write("\n")
             f.write("9999_END____________ 	# indicator end of input\n")
@@ -157,10 +201,13 @@ class PHIsim_SimulationParams:
     def copy(self, **changes):
         return replace(self, **changes)
 
-
 #################################################################################################
 
+# default set of parameters provided/collected by prof. Erwin Bente
+# augmented with parameters for the graphene-loaded-waveguide model
 PHIsim_params_InGaAsP_ridge = PHIsim_SimulationParams(
+    PHIsim_branch                      = "graphene-loaded-waveguide",
+
     wavelength                         = 1.547e-6,
     refractive_index                   = 3.7,
     n_wavelen_segment                  = 20,
@@ -234,5 +281,10 @@ PHIsim_params_InGaAsP_ridge = PHIsim_SimulationParams(
     sigma_FCR_grw                      = 1e-5,
     graphene_width_grw                 = 1.5e-6,
     n2_index_grw                       = 2.6e-19) 
+
+# if you don't want/need the graphene-loaded-waveguide
+PHIsim_params_InGaAsP_ridge_master = PHIsim_params_InGaAsP_ridge.copy(
+        PHIsim_branch = "master"
+)
 
 

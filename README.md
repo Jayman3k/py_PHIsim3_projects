@@ -2,6 +2,7 @@
 - [Introduction](#introduction)
 - [Using this framework](#using-this-framework)
   - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
   - [Getting started](#getting-started)
     - [1. Creating a flexible `device_file`](#1-creating-a-flexible-device_file)
     - [2. Defining the parameters of the simulation](#2-defining-the-parameters-of-the-simulation)
@@ -41,6 +42,18 @@ The framework was tested on computers with the Windows 10 and Windows 11 operati
 - A working installation of PHIsim, and a basic understanding of how it works. I would recommend that you at least try to run a few examples before trying to parallelize simulations.
 - Have a recent Python version installed (I recommend 3.12), including a package manager such as pip. A couple of packages (listed in the comments in the `__init__` file) are required to run the code. Some experience with packages such as numpy and matplotlib is useful, for processing and plotting results.
    - (Note: I realize that there are Python frameworks to formally specify which packages and which versions of those packages are used. At the time of writing my master's thesis, I considered this a low-priority task, and I didn't put any effort into it. You can blame my limited experience with Python dependency hell for that.)
+  
+## Installation
+
+Unfortunately, this tool is not packaged as a python package, so you'll have to download it directly from github. You can go to the op of the page to `Code > Download zip`, but if you're somewhat familiar with git I recommend cloning the repository. Then you can use it in two ways:
+
+   - Simply copy the tools folder to wherever you want to run the simulations and place your own Python files next to it, similar to the example file provided.
+   - A better way to avoid copying the files multiple times is to use a junction  to the tools folder from your working folder. This is a kind of linked folder, (install `junction` from [here](https://learn.microsoft.com/en-us/sysinternals/downloads/junction)), so just create a work-folder, put your own Python files there, and create a junction with:
+  
+         junction tools path\to\py_PHIsim3_projects\tools
+  
+
+   
 
 ## Getting started
 

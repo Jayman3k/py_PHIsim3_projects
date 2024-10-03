@@ -26,8 +26,9 @@ SOA more realistic.
 """
 
 ##############################################################################
-executables = phid.PHIsim_Executables("C:/PHIsim_git/phisim/build")
-work_folder_default = "C:/Users/daele/Documents/Master_Photonics_2324/Thesis/PHIsim_models/single_SOA/test"
+executables = phid.PHIsim_Executables("C:/PHISim_v3")
+
+work_folder_default = "C:/Users/20244629/Documents/temp"
 work_folder_RAMdisk = "R:/Temp"
 
 # prefer RAM-disk folder if it is mounted
@@ -245,12 +246,8 @@ From this point on the file can contain any text.
 
     def initialize_signal_input_file(self):
         pulse_power, pulse_phase = self.input_signal()
-        if self.signal_params.pulse_side == "left":
-            phis.write_signal_input_file(self.sim_params.signal_input_file, pulse_power, pulse_phase)
-        elif  self.signal_params.pulse_side == "both":
-            phis.write_signal_input_file(self.sim_params.signal_input_file, pulse_power, pulse_phase, pulse_power, pulse_phase)
-        else:
-            raise NotImplementedError(f"unknown pulse side {self.signal_params.pulse_side}")
+        phis.write_signal_from_side(self.sim_params.signal_input_file, pulse_power, pulse_phase, self.signal_params.pulse_side)
+
 
     def input_signal(self):
         pars = self.signal_params
@@ -764,8 +761,8 @@ if __name__ == '__main__':
     #plot_latex_style(plt, 12.0)
 
     print(f"Running single SOA simulations in [work folder {work_folder}]")
-    #phis.plot_gaussian_pulse(np.linspace(0, 20e-12, 1000), 0.04e-12, 4e-12, 10e-12, 0, plot_phase=False)
-    #phis.plot_gaussian_pulse(np.linspace(0, 200e-12, 10000), 100e-12, 1e-12, 5e-12, 1, plot_phase=True, num_pulses=10, pulse_distance=20e-12)
+    #phis.plot_gaussian_pulse(np.linspace(0, 200e-12, 1000), 10e-15, 50e-12, 100e-12, 0, plot_phase=False)
+    #phis.plot_gaussian_pulse(np.linspace(0, 200e-12, 10000), 100e-12, 1e-12, 5e-12, 1, plot_phase=True, num_pulses=8, pulse_distance=20e-12)
     #phis.plot_chirped_signal(np.linspace(0, 500e-12, 10000), 0.1, 200e-12, 1e9, 100e9, plot_phase=True, complex_chirp=True)
 
     #plot_output_power_for_various_soa_currents_with_single_pulse()

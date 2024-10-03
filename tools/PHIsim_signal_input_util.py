@@ -12,31 +12,52 @@ def keep_phase_in_range(phase):
     return np.mod(phase + np.pi, 2*np.pi) - np.pi
 
 
-def write_signal_input_file(filename, pulse_power_LR, pulse_phase_LR, pulse_power_RL=None, pulse_phase_RL=None):
-    """Utility method to write a signal input file"""
+def write_signal_from_side(filename, pulse_power, pulse_phase, side: str):
+    """utility method to write a signal input file, given a signal and a side"""
 
-    nr_data_in = len(pulse_power_LR)
+    if side == "left":
+        write_signal_input_file(filename, pulse_power, pulse_phase, None, None)
+    elif side == "right":
+        write_signal_input_file(filename, None, None, pulse_power, pulse_phase)
+    elif side == "both":
+        write_signal_input_file(filename, pulse_power, pulse_phase, pulse_power, pulse_phase)
+    else:
+        raise ValueError(f"unknown side {side}")
 
-    ## sanity checks 
-    assert len(pulse_phase_LR) == nr_data_in, \
-        f"pulse_power_LR and pulse_phase_LR must have same length ({nr_data_in} vs. {len(pulse_phase_LR)})"
-    assert pulse_power_RL is None or len(pulse_power_RL) == nr_data_in, \
-        f"pulse_power_LR and pulse_power_RL must have same length ({nr_data_in} vs. {len(pulse_power_RL)})"
-    assert pulse_phase_RL is None or len(pulse_phase_RL) == nr_data_in, \
-        f"pulse_power_LR and pulse_phase_LR must have same length ({nr_data_in} vs. {len(pulse_phase_RL)})"
-    assert (pulse_power_RL is None) == (pulse_phase_RL is None), \
-        "pulse_power_RL and pulse_phase_RL must be both None or both not None" 
+def write_signal_input_file(filename, pulse_power_LR=None, pulse_phase_LR=None, pulse_power_RL=None, pulse_phase_RL=None):
+    """Utility method to write a signal input file. 
+    Either RL or LR, or both signals may be given, but at least one must be present. 
+    If both are given, the length must be equal. Length of power and phase must also be equal.
+    """
 
-    if pulse_power_RL is None:
-        pulse_power_RL = np.zeros(nr_data_in)
-    if pulse_phase_RL is None: 
-        pulse_phase_RL = np.zeros(nr_data_in)
+    input_data = [pulse_power_LR, pulse_phase_LR, pulse_power_RL, pulse_phase_RL]
+    input_data_names = ["pulse_power_LR", "pulse_phase_LR", "pulse_power_RL", "pulse_phase_RL"]
+
+    if all(x is None for x in input_data):
+        raise ValueError(f"At least one of {input_data_names} must be not None")
+
+    nr_data_in = 0
+    for x in input_data:
+        if x is not None:
+            nr_data_in = len(x)
+            break
+
+    assert nr_data_in > 0, "No input data found?"	
+
+    for (x, name) in zip(input_data, input_data_names):
+        if x is not None and len(x) != nr_data_in:
+            raise ValueError(f"All input data must have same length. {name} has length {len(x)} vs. expected {nr_data_in}")
+
+    # replace None with zeroes
+    for i in range(len(input_data)):
+        if input_data[i] is None:
+            input_data[i] = np.zeros(nr_data_in)
 
     with open(filename, 'w') as f_par_out:  # open the file for writing
-        wr_f='{:01.9E} '
+        wr_f = '{:01.9E} '
         for i in range(0, nr_data_in):
-            s=wr_f.format(pulse_power_LR[i]) + wr_f.format(pulse_phase_LR[i]) + \
-              wr_f.format(pulse_power_RL[i]) + wr_f.format(pulse_phase_RL[i])+'\n'
+            s = wr_f.format(input_data[0][i]) + wr_f.format(input_data[1][i]) + \
+                wr_f.format(input_data[2][i]) + wr_f.format(input_data[3][i])+'\n'
             f_par_out.write(s)
 
 

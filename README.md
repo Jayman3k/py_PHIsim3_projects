@@ -364,8 +364,12 @@ Note: If sufficient people are having trouble with this, please contact me. Plea
 I've modified the code provided by prof. Bente to be able to create video files more easily. You can now create video files based on the timestamps of the simulation, and the framework will translate this to the correct video frames using the simulation parameters. In your simulation code simply use
 
 ```python
-    animate_video_slice("work/soa_30_segments_100_mA",  # where the sim-files are
-                        "simulation_video.mp4",         # name of video output file
-                        sim_params,                     # a PHIsim_SimulationParams object
-                        (4e-9, 5e-9))                   # start and stop timestamps of the video (in seconds)
+from tools.PHIsim_animate import animate_video_slice
+
+...
+
+animate_video_slice("work/soa_30_segments_100_mA",  # where the sim-files are
+                    "simulation_video.mp4",         # name of video output file
+                    sim_params,                     # a PHIsim_SimulationParams object
+                    (4e-9, 5e-9))                   # start and stop timestamps of the video (in seconds)
 ```

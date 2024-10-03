@@ -11,12 +11,13 @@ def fmt_pow10(val: float, precision: int = 2, times="times") -> str:
     return f'${base}\\{times}10^{{{power}}}$' 
 
 
-def fmt_eng(val: float, digits: int = 3) -> str:
+def fmt_eng(val: float, digits: int = 3, trailing_zeroes: bool=True) -> str:
     """formatting function for labels 
     converts numbers to SI (power of 3) magnitudes, for example, 1.1e-2 to '11m', 11000 to '11k', ...
     (note that this adds the 'μ' for micro, which has some issues when used in filenames)
     """
-    return f'{Float(val):.{digits}H}'
+    tz = '#' if trailing_zeroes else ''
+    return f'{Float(val):{tz}.{digits}H}'
 
 
 def plot_latex_style(pyplot, font_size=11.0):

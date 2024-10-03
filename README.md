@@ -18,7 +18,7 @@
   - [Potential Parallelization issues](#potential-parallelization-issues)
     - [Simulation is too short](#simulation-is-too-short)
     - [Running out of RAM](#running-out-of-ram)
-
+- [**NEW** create PHIsim movie animations](#new-create-phisim-movie-animations)
 
 # Introduction
 
@@ -358,3 +358,14 @@ Unfortunately, there's no easy way to check if your system has enough RAM to run
 If you start seeing weird errors like ``[WinAPI] Resource Unavailable`` you might be running out of memory. Have a look at your RAM usage using windows task manager, if it approaches 100%, this is most likely the culprit. The only way to work around this issue is to run less processes in parallel. So either you reduce this in your test setup, or you manually reduce ``MAX_NUM_CONCURRENT`` in ``PHIsim_dispatcher.py``.
 
 Note: If sufficient people are having trouble with this, please contact me. Please detail your problems as much as possible. I might consider adding more facilities for debugging, or at least make the concurrent count a variable rather than a constant.
+
+# **NEW** create PHIsim movie animations
+
+I've modified the code provided by prof. Bente to be able to create video files more easily. You can now create video files based on the timestamps of the simulation, and the framework will translate this to the correct video frames using the simulation parameters. In your simulation code simply use
+
+```python
+    animate_video_slice("work/soa_30_segments_100_mA",  # where the sim-files are
+                        "simulation_video.mp4",         # name of video output file
+                        sim_params,                     # a PHIsim_SimulationParams object
+                        (4e-9, 5e-9))                   # start and stop timestamps of the video (in seconds)
+```

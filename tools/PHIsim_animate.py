@@ -20,14 +20,49 @@ from matplotlib import pyplot as plt
 from matplotlib import animation
 from tqdm import tqdm
 
+from tools.PHIsim_sim_params import PHIsim_SimulationParams
+from tools.fmt_utils import fmt_eng
 
-DEFAULT_FRAME_WARNING_TRESHOLD =  5000
+DEFAULT_FRAME_WARNING_TRESHOLD =  2000
 DEFAULT_FRAME_ABORT_TRESHOLD   = 20000 
 
+def animate_video_slice(work_folder, output_filename, 
+                        sim_params: PHIsim_SimulationParams,
+                        time_window: tuple[float, float], 
+                        **kwargs):
+    """Animate a time slice of the simulation run by PHIsim. 
+
+    For description of parameters, see animate_video()
+    """
+    assert sim_params.video_N > 0, "No video files are stored by this simulation"
+
+    frame_delta_t = sim_params.simulation_time_step() * sim_params.video_N
+    video_start = sim_params.video_start * sim_params.simulation_time_step()
+
+    # a couple of sanity checks
+    assert time_window[0] >= video_start, "Start time is before video start"
+    assert time_window[1] >= time_window[0], "End time is before start time"
+    assert time_window[1] <= sim_params.simulation_total_time(), "End time is after video end"
+
+    frame_start = int((time_window[0] - video_start) / frame_delta_t)
+    frame_end = int((time_window[1] - video_start) / frame_delta_t)
+
+    # fix potential rounding errors if you end at exactly the end of the simulation
+    if frame_end >= sim_params.nr_cycles:
+        frame_end = None
+
+    animate_video(work_folder, output_filename, 
+                  timestamp_info=(video_start, frame_delta_t),
+                  frame_range=(frame_start, frame_end), 
+                  **kwargs)
+
+
 def animate_video(work_folder, output_filename, 
+                  timestamp_info : tuple[float, float],
                   # optional arguments:
                   phisimout_name='PHIsimout.txt', 
                   show_progress=True, show_result=True, print_debug=True,
+                  frame_range: tuple[int, int]=(None, None),
                   sanity_limits={"warn" : DEFAULT_FRAME_WARNING_TRESHOLD, 
                                  "error" : DEFAULT_FRAME_ABORT_TRESHOLD},
                   # additional arguments passed to animation.save()
@@ -43,6 +78,9 @@ def animate_video(work_folder, output_filename,
         The folder where the PHIsim output is stored.
     output_filename: str
         The filename of the output video, including extension (e.g. "animation.mp4")
+    timestamp_info: tuple[float, float]
+        The (start, step) timing info of the video. Used for noting the timestamp of a 
+        frame in the video (in seconds). 
 
     phisimout_name: str, optional
         The name of the PHIsim output file (default: 'PHIsimout.txt')
@@ -54,6 +92,8 @@ def animate_video(work_folder, output_filename,
         Whether to show the result (default: True)
     print_debug: bool, optional
         Whether to print debug information (default: True)
+    frame_range: tuple, optional
+        A tuple containing the start and end frame (default: (None, None)). Either or both may be specified.
     sanity_limits: dict, optional
         A dictionary containing the following keys and values:
         - 'warn' : [int], prints a warning when the number of frames is larger than this value
@@ -78,18 +118,6 @@ def animate_video(work_folder, output_filename,
     dimens        = np.shape(video_dat_LRp)
     nr_frames     = dimens[1]
     nr_sl_data    = dimens[0]
-
-    if print_debug:
-        print('Nr of frames:', nr_frames, 'Nr of data:', nr_sl_data)
-
-    if sanity_limits:
-        if warn_limit := sanity_limits.get("warn", None):
-            if nr_frames > warn_limit:
-                print(f'WARNING: video data has {nr_frames} frames, resulting file will be large and encoding will take a while')
-        if err_limit := sanity_limits.get("error", None):
-            if nr_frames > err_limit:
-                print(f'ERROR: video data would have {nr_frames} frames, ABORTING encode') 
-                return  
     
     # load the other data files with RLp en carriers as well
     video_dat_RLp = np.loadtxt(vid_dat_name_RLp, unpack=True, ndmin=2)
@@ -101,13 +129,27 @@ def animate_video(work_folder, output_filename,
 
     maxy = max_LRp
     if max_RLp > max_LRp:
-        maxy = max_RLp   
+        maxy = max_RLp 
+
+    frame_slice, frame_slice_count = __to_slice_and_num_frames(frame_range, nr_frames)  
+
+    if print_debug:
+        print('Nr of frames:', frame_slice_count, 'Nr of segments:', nr_sl_data)
+
+    if sanity_limits:
+        if err_limit := sanity_limits.get("error", None):
+            if frame_slice_count > err_limit:
+                print(f'ERROR: video data would have {frame_slice_count} frames, ABORTING encode') 
+                return  
+        if warn_limit := sanity_limits.get("warn", None):
+            if frame_slice_count > warn_limit:
+                print(f'WARNING: video data has {frame_slice_count} frames, resulting file will be large and encoding will take a while')
 
     # copy data to a 3d array and scale all data to 1
-    npdata = np.random.rand(nr_sl_data, 3, nr_frames)
-    npdata[:,0,:] = video_dat_LRp[:,:] / maxy
-    npdata[:,1,:] = video_dat_RLp[:,:] / maxy
-    npdata[:,2,:] = video_dat_car[:,:] / max_car
+    npdata = np.zeros((nr_sl_data, 3, nr_frames))
+    npdata[:,0,frame_slice] = video_dat_LRp[:,frame_slice] / maxy
+    npdata[:,1,frame_slice] = video_dat_RLp[:,frame_slice] / maxy
+    npdata[:,2,frame_slice] = video_dat_car[:,frame_slice] / max_car
 
     max_y = 1.0
     # max_y = video_dat_car.max()
@@ -134,6 +176,8 @@ def animate_video(work_folder, output_filename,
         return lines
 
     def animate(i):
+        timestamp = timestamp_info[0] + i * timestamp_info[1]
+        fig.get_axes()[0].set_xlabel(f'Segments (#) [time {fmt_eng(timestamp, digits=4)}s]')
         x = np.linspace(1, nr_sl_data, nr_sl_data)
         
         for lnum,line in enumerate(lines):        
@@ -143,13 +187,13 @@ def animate_video(work_folder, output_filename,
     
     # show a progress bar if needed - this is recommended as encoding can take a 
     # couple of second up to minutes for longer animations
+    frames_iter = range(*frame_slice.indices(nr_frames))
     if show_progress:
-        frames = tqdm(range(nr_frames), desc="writing frames", colour="red")
-    else:
-        frames = nr_frames
+        # wrap iter with a tqdm to show a progress bar (tqdm is iterable too)
+        frames_iter = tqdm(frames_iter, desc="writing frames", colour="red")
 
     # call the animator.  blit=True means only re-draw the parts that have changed.
-    anim = animation.FuncAnimation(fig, animate, init_func=init, frames=frames, 
+    anim = animation.FuncAnimation(fig, animate, init_func=init, frames=frames_iter, 
                                    interval=100, blit=True)
 
     # save the animation as an mp4.  This requires ffmpeg or mencoder to be
@@ -169,3 +213,19 @@ def animate_video(work_folder, output_filename,
 
     if show_result:
         plt.show()
+
+
+def __to_slice_and_num_frames(frame_range, nr_frames):
+    if frame_range is not None:
+        start, end = frame_range
+        if start is not None:
+            assert start >= 0
+        if end is not None:
+            assert end <= nr_frames
+        frame_slice = slice(start, end) # start and/or end are allowed to be None
+    else:
+        frame_slice = slice(None) # the "any" slice
+
+    start_idx, stop_idx, _ = frame_slice.indices(nr_frames)
+
+    return frame_slice, (stop_idx - start_idx)

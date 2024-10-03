@@ -19,11 +19,16 @@ from fmt_utils import fmt_eng, plot_latex_style
 # NOTE3: We apply the filter to the amplitude of the optical field, not the power,
 #        therefore, we have to take the square of the amplitude filter response to get
 #        the spectral power response
+#
+#        Even though the labels say "magnitude" and "amplitude", it could be plotting the 
+#        spectral power (amplitude**2). I switched back and forth a couple of times,
+#        it's a hassle to keep the label consistent, and I don't want to write code for that. 
+#        --> Just check if the data is squared or not.
 
 def _fmt_arr(arr) -> str:
     return np.array2string(arr, precision=12, floatmode='fixed', separator=", ")
 
-fs = 25e12 
+fs = 273e12 # 25e12 
 design = "fir"
 simulated_soa_len = 1e-3 # m
 save_tikz = False
@@ -132,11 +137,12 @@ if design == "fir":
     #    because we need a smooth gain drop-off, this disadvantage is actually
     #    pretty small. 
 
-    fc = 1e12
+    fc = 20e12 #1e12
 
     plt.figure()
-    plt.title(f'FIR magnitude response [fs={fmt_eng(fs)}Hz, fc={fmt_eng(fc)}Hz]')
+    plt.title(f'FIR response [fs={fmt_eng(fs)}Hz, fc={fmt_eng(fc)}Hz]')
     plt.xlabel('Frequency [GHz]')
+
     plt.ylabel('Amplitude')
     #plt.margins(0, 0.1)
     plt.grid(which='both', axis='both')
@@ -211,7 +217,7 @@ juo_y = {}
 for current in ("1A", "2A"):
     juo_x[current], juo_y[current] = smooth_gain_curve(JuodawlkisGainCurve[current]["lambda_nm"], JuodawlkisGainCurve[current]["gain_dB"])
 
-plot_latex_style(plt, 13.0)
+#plot_latex_style(plt, 13.0)
 
 plt.figure()
 #plt.title("Comparison between experimental gain and filter response")

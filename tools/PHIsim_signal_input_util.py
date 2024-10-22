@@ -13,21 +13,27 @@ def keep_phase_in_range(phase):
 
 
 def write_signal_from_side(filename, pulse_power, pulse_phase, side: str):
-    """utility method to write a signal input file, given a signal and a side"""
-
-    if side == "left":
-        write_signal_input_file(filename, pulse_power, pulse_phase, None, None)
-    elif side == "right":
-        write_signal_input_file(filename, None, None, pulse_power, pulse_phase)
-    elif side == "both":
-        write_signal_input_file(filename, pulse_power, pulse_phase, pulse_power, pulse_phase)
-    else:
-        raise ValueError(f"unknown side {side}")
+    """utility method to write a signal input file, given a signal and a side.
+    
+    Pulse power and phase are assumed to be in W and rad, respectively. Both arrays must be of the same length.
+    """
+    match side:
+        case "left":
+            write_signal_input_file(filename, pulse_power, pulse_phase, None, None)
+        case "right":
+            write_signal_input_file(filename, None, None, pulse_power, pulse_phase)
+        case "both":
+            write_signal_input_file(filename, pulse_power, pulse_phase, pulse_power, pulse_phase)
+        case _:
+            raise ValueError(f"unknown side {side}")
 
 def write_signal_input_file(filename, pulse_power_LR=None, pulse_phase_LR=None, pulse_power_RL=None, pulse_phase_RL=None):
     """Utility method to write a signal input file. 
-    Either RL or LR, or both signals may be given, but at least one must be present. 
-    If both are given, the length must be equal. Length of power and phase must also be equal.
+
+    Pulse power and phase are assumed to be in W and rad, respectively. Both arrays must be of the same length.
+
+    Either RL or LR, or both may be given, but at least one must be present. 
+    If both are given, the lengths must be equal. 
     """
 
     input_data = [pulse_power_LR, pulse_phase_LR, pulse_power_RL, pulse_phase_RL]
@@ -66,7 +72,7 @@ def sech2_FWHM_to_tau(t_FWHM: float) -> float:
     return t_FWHM / (2 * np.log(np.sqrt(2) + 1))
 
 
-def sech2_pulse_with_peak_power(time_array, pulse_peak_power, pulse_FWHM, pulse_center, pulse_chirp) -> tuple[np.array, np.array]:
+def sech2_pulse_with_peak_power(time_array, pulse_peak_power, pulse_FWHM, pulse_center, pulse_chirp) -> tuple[np.ndarray, np.ndarray]:
     """create generic sech2 pulse with desired peak power
     time_array should contain an array of timestamps, with constant time-step
     """
@@ -102,7 +108,7 @@ def sech2_pulse_with_peak_power(time_array, pulse_peak_power, pulse_FWHM, pulse_
     return pulse_power, pulse_phase
 
 
-def sech2_pulse_with_total_energy(time_array, pulse_energy, pulse_FWHM, pulse_center, pulse_chirp) -> tuple[np.array, np.array]:
+def sech2_pulse_with_total_energy(time_array, pulse_energy, pulse_FWHM, pulse_center, pulse_chirp) -> tuple[np.ndarray, np.ndarray]:
     """
     create generic sech2 pulse and just scale the data to match desired pulse energy 
     (scaling a pulse does not change its FWHM)
@@ -172,7 +178,7 @@ def gaussian_FWHM_to_tau(t_FWHM) -> float:
     return t_FWHM / (2 * np.sqrt(2*np.log(2)))
 
 
-def gaussian_pulse(time_array: np.array, pulse_energy, pulse_FWHM, pulse_center, pulse_chirp) -> tuple[np.array, np.array]:
+def gaussian_pulse(time_array: np.ndarray, pulse_energy, pulse_FWHM, pulse_center, pulse_chirp) -> tuple[np.ndarray, np.ndarray]:
     """create generic gaussian pulse with desired peak power
     time_array should contain an array of timestamps, with constant time-step
     """

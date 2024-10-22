@@ -2,7 +2,7 @@ from dataclasses import dataclass, replace, fields
 from typing import ClassVar
 from typing import Annotated
 
-from tools.PHIsim_constants import SPEED_OF_LIGHT as c_l
+from tools.PHIsim_constants import SPEED_OF_LIGHT as c_l, MAXNR_OPT_DAT
 
 @dataclass
 class _PD:
@@ -120,11 +120,20 @@ class PHIsim_SimulationParams:
     # utility methods to convert between number of segments and units of time or length
     #################################################################################################
 
-    def simulation_time_step(self):
-        return self.n_wavelen_segment * self.wavelength / c_l
-    
+    def set_simulation_total_time(self, time):
+        """Set number of cycles to match the desired total simulation time.
+        Note that changing n_wavelen_segment or wavelength after this call will 
+        also change the total simulation time again."""
+        self.nr_cycles = int(time / self.simulation_time_step())
+
+        assert self.nr_cycles < MAXNR_OPT_DAT, \
+            f"Too many cycles! {self.nr_cycles} exceeds {MAXNR_OPT_DAT} limit."
+
     def simulation_total_time(self):
         return self.simulation_time_step() * self.nr_cycles
+    
+    def simulation_time_step(self):
+        return self.n_wavelen_segment * self.wavelength / c_l
     
     def simulation_segment_length(self, segments:int=1): ## in meters
         return segments * self.wavelength * self.n_wavelen_segment / self.refractive_index

@@ -226,7 +226,7 @@ local_sim_params = phip.PHIsim_params_InGaAsP_ridge.copy(
 signal_params = {} # parameters for the input signal, not implemented in this example
 
 test_setups = []
-for soa_len in np.linspace(1e-4, 1e-3, 19):
+for soa_len in np.linspace(1e-4, 1e-3, 19): # 100μm to 1mm in steps of 50μm
     test_setups.append(
         TestSOASetup(local_sim_params, soa_len, soa_current, waveguide_len, signal_params))
 
@@ -249,10 +249,11 @@ After a simulation has run, you can process the results. The results object retu
 
 ```python
 def energy_out(data, simulation_params, output_side):
-    if output_side == "left":
-        return np.sum(data.P_RL_out) * simulation_params.simulation_time_step()
-    elif output_side == "right":
-        return np.sum(data.P_LR_out) * simulation_params.simulation_time_step()
+    match output_side:
+        case "left":
+            return np.sum(data.P_RL_out) * simulation_params.simulation_time_step()
+        case "right":
+            return np.sum(data.P_LR_out) * simulation_params.simulation_time_step()
 
     raise RuntimeError(f"unknown output side {output_side}, use 'left' or 'right'")
 ```

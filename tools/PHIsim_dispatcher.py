@@ -23,10 +23,10 @@ MAX_NUM_CONCURRENT = max(2, int(os.cpu_count()*0.8))
 
 @dataclass
 class PHIsim_Result:
-    P_LR_out: np.array 
-    F_LR_out: np.array 
-    P_RL_out: np.array 
-    F_RL_out: np.array
+    P_LR_out: np.ndarray 
+    F_LR_out: np.ndarray 
+    P_RL_out: np.ndarray 
+    F_RL_out: np.ndarray
     num_cycles_completed: int
 
 

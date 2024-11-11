@@ -251,20 +251,6 @@ def repeat_pulse(time_array, pulse_power, pulse_phase, times : int, distance : f
 
     return shift_repeat_pulse(time_array, pulse_power, pulse_phase, 
                               [i * distance for i in range(1, times)])
-    # time_step = time_array[1] - time_array[0]
-
-    # # to sum pulses, we convert to electric field, sum the shifted electric fields and then convert back
-    # base_field = np.sqrt(pulse_power) * np.exp(1j * pulse_phase)
-    # pulse_field = np.copy(base_field)
-    # for i in range(1, times):
-    #      # re-shift the base field on each iteration to reduce the rounding error in index_shift
-    #     index_shift = int(i * distance / time_step) 
-    #     pulse_field += np.roll(base_field, index_shift)
-
-    # pulse_power = np.abs(pulse_field) ** 2
-    # pulse_phase = np.angle(pulse_field)
-
-    # return pulse_power, pulse_phase
 
 
 def shift_repeat_pulse(time_array, pulse_power, pulse_phase, shifts):
